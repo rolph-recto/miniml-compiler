@@ -1,3 +1,6 @@
+-- Interp.hs
+-- This will be the reference interpreter used to test compiler output
+
 {-# LANGUAGE OverloadedStrings, RankNTypes #-}
 
 module MiniML.Interp (
@@ -24,7 +27,7 @@ interp exp = case exp of
 
   RLit _ -> return exp
 
-  SLit _ -> return exp
+  TLit _ -> return exp
 
   Fun _ _ -> return exp
 
@@ -119,6 +122,44 @@ interp exp = case exp of
         return $ RLit (xreal / yreal)
       otherwise -> do
         throwError "Expected number arguments for arithmetic primop"
+
+  Prim (Eql x y) -> do
+    xval <- interp x
+    yval <- interp y
+    case (xval, yval) of
+      (ILit xint, ILit yint) -> return $ BLit (xint == yint)
+      (RLit xreal, RLit yreal) -> return $ BLit (xreal == yreal)
+      (TLit xstr, TLit ystr) -> return $ BLit (xstr == ystr)
+      (BLit xbool, BLit ybool) -> return $ BLit (xbool == ybool)
+      otherwise -> throwError "Expected literal arguments for primop EQL"
+
+  Prim (Lt x y) -> do
+    xval <- interp x
+    yval <- interp y
+    case (xval, yval) of
+      (ILit xint, ILit yint) -> return $ BLit (xint < yint)
+      (RLit xreal, RLit yreal) -> return $ BLit (xreal < yreal)
+      otherwise -> throwError "Expected numerical arguments for primop LT"
+
+  Prim (And x y) -> do
+    xval <- interp x
+    yval <- interp y
+    case (xval, yval) of
+      (BLit xbool, BLit ybool) -> return $ BLit (xbool && ybool)
+      otherwise -> throwError "Expected boolean arguments for primop AND"
+
+  Prim (Or x y) -> do
+    xval <- interp x
+    yval <- interp y
+    case (xval, yval) of
+      (BLit xbool, BLit ybool) -> return $ BLit (xbool || ybool)
+      otherwise -> throwError "Expected boolean arguments for primop OR"
+
+  Prim (Not x) -> do
+    xval <- interp x
+    case xval of
+      BLit xbool -> return $ BLit (not xbool)
+      otherwise  -> throwError "Expected boolean arguments for primop OR"
 
   Prim (Cond pred bthen belse) -> do
     predval <- interp pred

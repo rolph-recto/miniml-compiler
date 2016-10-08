@@ -8,8 +8,7 @@ import qualified Data.Text as T
 
 -- this is called the "lambda language in Appel (Ch. 4)
 
-type VarName = Int
-
+type VarName = Int 
 data AccessPath where
   OffP :: Int -> AccessPath
   SelP :: Int -> AccessPath
@@ -35,14 +34,21 @@ data Con where
   deriving (Eq, Show)
 -}
 
-data Val
-data NonVal
-
 data PrimOp where
+  -- arithmetic expressions
   Add  :: LExp -> LExp -> PrimOp
   Sub  :: LExp -> LExp -> PrimOp
   Mul  :: LExp -> LExp -> PrimOp
   Div  :: LExp -> LExp -> PrimOp
+
+  -- boolean expressions
+  Eql  :: LExp -> LExp -> PrimOp
+  Lt   :: LExp -> LExp -> PrimOp
+  And  :: LExp -> LExp -> PrimOp
+  Or   :: LExp -> LExp -> PrimOp
+  Not  :: LExp -> PrimOp
+
+  -- other
   Cond :: LExp -> LExp -> LExp -> PrimOp
   deriving (Eq, Show)
 
@@ -51,7 +57,7 @@ data LExp where
   ILit   :: Int -> LExp 
   BLit   :: Bool -> LExp 
   RLit   :: Double -> LExp 
-  SLit   :: T.Text -> LExp 
+  TLit   :: T.Text -> LExp 
   Fix    :: [(VarName, LExp)] -> LExp -> LExp 
   Fun    :: VarName -> LExp -> LExp 
   Var    :: VarName -> LExp

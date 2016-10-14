@@ -3,10 +3,10 @@
 
 {-# LANGUAGE OverloadedStrings, RankNTypes #-}
 
+{-
 module MiniML.Interp (
   interp, runMiniML
 ) where
-
 
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
@@ -183,3 +183,4 @@ interp exp = case exp of
 
 runMiniML :: LExp -> IO (Either T.Text LExp)
 runMiniML expr = runReaderT (runExceptT (interp expr)) M.empty
+-}

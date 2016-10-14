@@ -17,7 +17,7 @@ cabal-version:       >=1.10
 
 executable miniml-compiler
   main-is:             Main.hs
-  other-modules:       MiniML.AST, MiniML.Interp
+  other-modules:       MiniML.AST, MiniML.CPS, MiniML.Util
   -- other-extensions:    
   build-depends:       base, containers, mtl, text
   hs-source-dirs:      src

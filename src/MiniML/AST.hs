@@ -1,74 +1,80 @@
 {-# LANGUAGE GADTs #-}
 
 module MiniML.AST (
-  LExp(..), PrimOp(..), ConRep(..), VarName
+  LExp(..), LPrimOp(..), ConRep(..), getVars, getMaxVar
 ) where
 
 import qualified Data.Text as T
+import MiniML.Util
 
 -- this is called the "lambda language in Appel (Ch. 4)
 
-type VarName = Int 
-data AccessPath where
-  OffP :: Int -> AccessPath
-  SelP :: Int -> AccessPath
+data ConRep = Tagged Int
+            | Constant Int
+            | Transparent
+            | Transu
+            | Transb
+            | Ref
+            -- Variable constructors are used for exception handling
+            -- | Variable Var AccessPath
+            -- | VariableC Var AccessPath
+            deriving (Show)
 
-data ConRep where
-  -- Undecided   :: ConRep
-  Tagged      :: Int -> ConRep
-  -- Constant    :: Int -> ConRep
-  -- Transparent :: ConRep
-  -- Transu      :: ConRep
-  -- Transb      :: ConRep
-  -- Ref         :: ConRep
-  -- Variable    :: Var -> AccessPath -> ConRep
-  -- VariableC   :: Var -> AccessPath
-  deriving (Eq, Show)
+data Con = DataCon ConRep
+         | IntCon Int
+         | RealCon Double
+         | StrCon T.Text
+         deriving (Show)
 
-{-
-data Con where
-  DataCon   :: ConRep -> Con
-  IntCon    :: Int -> Con
-  RealCon   :: T.Text -> Con
-  StringCon :: T.Text -> Con
-  deriving (Eq, Show)
--}
-
-data PrimOp where
-  -- arithmetic expressions
-  Add  :: LExp -> LExp -> PrimOp
-  Sub  :: LExp -> LExp -> PrimOp
-  Mul  :: LExp -> LExp -> PrimOp
-  Div  :: LExp -> LExp -> PrimOp
-
-  -- boolean expressions
-  Eql  :: LExp -> LExp -> PrimOp
-  Lt   :: LExp -> LExp -> PrimOp
-  And  :: LExp -> LExp -> PrimOp
-  Or   :: LExp -> LExp -> PrimOp
-  Not  :: LExp -> PrimOp
-
-  -- other
-  Cond :: LExp -> LExp -> LExp -> PrimOp
-  deriving (Eq, Show)
+data LPrimOp = LAdd | LMul | LSub | LDiv | CallCC | Throw deriving (Show)
 
 -- expressions
-data LExp where
-  ILit   :: Int -> LExp 
-  BLit   :: Bool -> LExp 
-  RLit   :: Double -> LExp 
-  TLit   :: T.Text -> LExp 
-  Fix    :: [(VarName, LExp)] -> LExp -> LExp 
-  Fun    :: VarName -> LExp -> LExp 
-  Var    :: VarName -> LExp
-  App    :: LExp -> LExp -> LExp 
-  Switch :: LExp -> [ConRep] -> [(ConRep, LExp)] -> Maybe LExp -> LExp 
-  Con    :: ConRep -> LExp -> LExp 
-  Decon  :: ConRep -> LExp -> LExp 
-  Record :: [LExp] -> LExp 
-  Select :: Int -> LExp -> LExp 
-  -- Raise  :: LExp -> LExp 
-  -- Handle :: LExp -> LExp -> LExp 
-  Prim   :: PrimOp -> LExp 
-  deriving (Eq, Show)
-  
+data LExp = LVar Var
+          | LFun Var LExp
+          | LFix [(Var,LExp)] LExp
+          | LApp LExp LExp
+          | LInt Int
+          | LReal Double
+          | LStr T.Text
+          | LSwitch LExp [ConRep] [(Con, LExp)] (Maybe LExp)
+          | LCon ConRep LExp
+          | LDecon ConRep LExp
+          | LRecord [LExp]
+          | LSelect Int LExp
+          | LPrim LPrimOp
+          -- | Raise LExp
+          -- | Handle LExp LExp
+          deriving (Show)
+
+getVars :: LExp -> [Var]
+getVars lexp = case lexp of
+  LVar v -> [v]
+
+  LFun arg body -> arg:(getVars body)
+
+  LFix binds exp -> 
+    (map fst binds) ++ (concatMap getVars (map snd binds)) ++ (getVars exp)
+
+  LApp f arg -> (getVars f) ++ (getVars arg)
+
+  LInt _ -> []
+
+  LReal _ -> []
+
+  LStr _ -> []
+
+  LSwitch e _ branches def ->
+    (getVars e) ++ (concatMap getVars (map snd branches)) ++ (maybe [] getVars def)
+
+  LCon _ e -> getVars e
+
+  LDecon _ e -> getVars e
+
+  LRecord rs -> concatMap getVars rs
+
+  LSelect _ r -> getVars r
+
+  LPrim _ -> []
+
+getMaxVar :: LExp -> Var
+getMaxVar = maximum . getVars

@@ -12,7 +12,7 @@ main = do
                     (LInt 1)
                     (LPrim (LMul (LVar 1) (LApp (LVar 0) (LPrim (LSub (LVar 1) (LInt 1))))))))
   -}
-  let sqr     = LFun 1 (LApp (LApp (LPrim LMul) (LVar 1)) (LVar 1))
+  let sqr     = LFun 1 (LApp (LPrim LMul) (LRecord [LVar 1, LVar 1]))
   let prog n  = LFix [(0, sqr)] (LApp (LVar 0) (LInt n))
   let prog2 n = LApp sqr (LInt n)
   let res = runToCPS (prog2 5)
